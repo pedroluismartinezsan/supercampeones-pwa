@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#071b3d">
+  <meta name="description" content="SUPERCAMPEONES · Escuela Deportiva">
+  <title>SUPERCAMPEONES · App</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <style>
+    :root{color-scheme:dark;--navy:#071b3d;--blue:#1264ff;--gold:#ffd447}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--navy);font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+    .bar{height:42px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 10px;background:#06142d;color:white;border-bottom:1px solid #ffd44766}
+    .brand{font-size:13px;font-weight:900;letter-spacing:.7px;white-space:nowrap}
+    .brand span{color:var(--gold)}
+    #installBtn{border:1px solid #78caff;background:linear-gradient(110deg,#0757db,#1689ff);color:white;border-radius:9px;padding:7px 12px;font-weight:800;font-size:12px;white-space:nowrap}
+    #installHint{display:none;color:#c9dcff;font-size:11px;padding:5px 10px;background:#102d59}
+    main{height:calc(100dvh - 42px);width:100%;background:var(--navy)}
+    iframe{display:block;border:0;width:100%;height:100%;background:var(--navy)}
+    body.standalone .bar,body.standalone #installHint{display:none}
+    body.standalone main{height:100dvh}
+    @supports(height:100svh){main{height:calc(100svh - 42px)}body.standalone main{height:100svh}}
+    @media(max-width:380px){.brand{font-size:11px}#installBtn{padding:7px 8px;font-size:11px}}
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">⚽ <span>SUPERCAMPEONES</span></div>
+    <button id="installBtn" type="button">⬇ Instalar app</button>
+  </header>
+  <div id="installHint"></div>
+  <main><iframe id="appFrame" title="Sistema SUPERCAMPEONES" allow="clipboard-read; clipboard-write"></iframe></main>
+  <script src="./config.js"></script>
+  <script>
+    (function(){
+      const frame=document.getElementById('appFrame');
+      const btn=document.getElementById('installBtn');
+      const hint=document.getElementById('installHint');
+      if(!window.SUPERCAMPEONES_APP_URL || window.SUPERCAMPEONES_APP_URL.includes('PEGA_AQUI')){
+        frame.srcdoc='<main style="font-family:system-ui;color:#fff;padding:24px;line-height:1.5"><h2>Configura la URL de tu aplicación</h2><p>Abre el archivo <b>config.js</b> y pega la URL publicada de tu aplicación web de Google Apps Script entre las comillas.</p><p>Después publica esta carpeta en GitHub Pages.</p></main>';
+      } else {
+        frame.src=window.SUPERCAMPEONES_APP_URL;
+      }
+      let installPrompt=null;
+      const standalone=()=>window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+      if(standalone()) document.body.classList.add('standalone');
+      window.addEventListener('beforeinstallprompt',e=>{
+        e.preventDefault();installPrompt=e;btn.style.display='inline-block';
+      });
+      btn.addEventListener('click',async()=>{
+        if(installPrompt){
+          installPrompt.prompt();
+          await installPrompt.userChoice;
+          installPrompt=null;
+        } else {
+          hint.style.display='block';
+          hint.textContent='En Chrome: abre el menú ⋮ y elige “Instalar aplicación” o “Agregar a pantalla principal”. En iPhone: Compartir → Añadir a pantalla de inicio.';
+        }
+      });
+      window.addEventListener('appinstalled',()=>{
+        btn.style.display='none';hint.style.display='none';document.body.classList.add('standalone');
+      });
+      if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+        window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));
+      }
+    })();
+  </script>
+</body>
+</html>
